@@ -1,0 +1,2587 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelBuddy Finder</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Outfit', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); }
+    .card-gradient { background: linear-gradient(145deg, rgba(30, 58, 95, 0.8), rgba(15, 23, 42, 0.9)); }
+    .glow { box-shadow: 0 0 40px rgba(56, 189, 248, 0.15); }
+    .match-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .match-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .nav-link { position: relative; }
+    .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #38bdf8, #818cf8); transition: width 0.3s; }
+    .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.5); }
+    .btn-primary { background: linear-gradient(135deg, #38bdf8, #818cf8); transition: all 0.3s; }
+    .btn-primary:hover { transform: scale(1.02); box-shadow: 0 10px 30px rgba(56, 189, 248, 0.3); }
+    .btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.15); border-color: rgba(56, 189, 248, 0.5); }
+    .score-ring { background: conic-gradient(#38bdf8 calc(var(--score) * 3.6deg), rgba(255,255,255,0.1) 0); }
+    .toast { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full gradient-bg text-white overflow-auto">
+  <div id="app" class="min-h-full flex flex-col">
+   <!-- Navigation -->
+   <nav id="navbar" class="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+     <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('home')">
+       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+       </div><span id="nav-title" class="font-display text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">TravelBuddy</span>
+      </div>
+      <div class="hidden md:flex items-center gap-6" id="nav-links">
+       <button onclick="navigateTo('home')" class="nav-link text-sm text-slate-300 hover:text-white transition" data-page="home">Home</button> <button onclick="navigateTo('find')" class="nav-link text-sm text-slate-300 hover:text-white transition" data-page="find">Find Traveller</button> <button onclick="navigateTo('groups')" class="nav-link text-sm text-slate-300 hover:text-white transition" data-page="groups">Groups</button> <button onclick="navigateTo('suggestions')" class="nav-link text-sm text-slate-300 hover:text-white transition" data-page="suggestions">AI Suggestions</button> <button onclick="navigateTo('planner')" class="nav-link text-sm text-slate-300 hover:text-white transition" data-page="planner">Planner</button> <button onclick="navigateTo('messages')" class="nav-link text-sm text-slate-300 hover:text-white transition" data-page="messages">Messages</button>
+      </div>
+      <div class="flex items-center gap-3" id="auth-buttons">
+       <!-- Dynamic auth buttons -->
+      </div><button class="md:hidden p-2" onclick="toggleMobileMenu()">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+       </svg></button>
+     </div><!-- Mobile Menu -->
+     <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-white/10 pt-4">
+      <div class="flex flex-col gap-3">
+       <button onclick="navigateTo('home')" class="text-left text-slate-300 hover:text-white py-2">Home</button> <button onclick="navigateTo('find')" class="text-left text-slate-300 hover:text-white py-2">Find Traveller</button> <button onclick="navigateTo('groups')" class="text-left text-slate-300 hover:text-white py-2">Groups</button> <button onclick="navigateTo('suggestions')" class="text-left text-slate-300 hover:text-white py-2">AI Suggestions</button> <button onclick="navigateTo('planner')" class="text-left text-slate-300 hover:text-white py-2">Planner</button> <button onclick="navigateTo('messages')" class="text-left text-slate-300 hover:text-white py-2">Messages</button>
+      </div>
+     </div>
+    </div>
+   </nav><!-- Toast Container -->
+   <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div><!-- Main Content -->
+   <main id="main-content" class="flex-1">
+    <!-- Pages will be rendered here -->
+   </main><!-- Footer -->
+   <footer class="border-t border-white/10 py-6 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-slate-400 text-sm">
+     <p>© 2024 TravelBuddy. Find your perfect travel companion.</p>
+    </div>
+   </footer>
+  </div>
+  <script>
+    // ===== STATE MANAGEMENT =====
+    let currentUser = null;
+    let allUsers = [];
+    let allGroups = [];
+    let allRequests = [];
+    let allMessages = [];
+    let currentPage = 'home';
+    let isLoading = false;
+    let currentChatId = null;
+    let aiPlaceDetails = null;
+    let aiPlaceLoading = false;
+    let aiTripPlan = null;
+    let aiTripLoading = false;
+    let plannerDestination = '';
+    let destinationSearchInput = '';
+
+    // ===== DEFAULT CONFIG =====
+    const defaultConfig = {
+      app_title: 'TravelBuddy',
+      tagline: 'Find your perfect travel companion',
+      primary_color: '#0f172a',
+      secondary_color: '#1e3a5f',
+      accent_color: '#38bdf8',
+      text_color: '#f1f5f9',
+      card_color: '#1e293b'
+    };
+
+    const destinationOptions = [
+      'Goa, India',
+      'Kerala Backwaters',
+      'Munnar, Tamil Nadu',
+      'Ooty, Tamil Nadu',
+      'Coorg, Karnataka',
+      'Pondicherry',
+      'Hampi, Karnataka',
+      'Mysore, Karnataka',
+      'Madurai, Tamil Nadu'
+    ];
+
+    // ===== ELEMENT SDK INITIALIZATION =====
+    const elementHandler = {
+      defaultConfig,
+      onConfigChange: async (config) => {
+        const title = config.app_title || defaultConfig.app_title;
+        const tagline = config.tagline || defaultConfig.tagline;
+        
+        const navTitle = document.getElementById('nav-title');
+        if (navTitle) navTitle.textContent = title;
+        
+        const heroTitle = document.getElementById('hero-title');
+        if (heroTitle) heroTitle.textContent = title;
+        
+        const heroTagline = document.getElementById('hero-tagline');
+        if (heroTagline) heroTagline.textContent = tagline;
+      },
+      mapToCapabilities: (config) => ({
+        recolorables: [],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      }),
+      mapToEditPanelValues: (config) => new Map([
+        ['app_title', config.app_title || defaultConfig.app_title],
+        ['tagline', config.tagline || defaultConfig.tagline]
+      ])
+    };
+
+    if (window.elementSdk) {
+      window.elementSdk.init(elementHandler);
+    }
+
+    // ===== DATA SDK INITIALIZATION =====
+    const dataHandler = {
+      onDataChanged: (data) => {
+        allUsers = data.filter(d => d.type === 'user');
+        allGroups = data.filter(d => d.type === 'group');
+        allRequests = data.filter(d => d.type === 'request');
+        allMessages = data.filter(d => d.type === 'message');
+        
+        // Check if current user still exists
+        if (currentUser) {
+          const updatedUser = allUsers.find(u => u.__backendId === currentUser.__backendId);
+          if (updatedUser) {
+            currentUser = updatedUser;
+          }
+        }
+        
+        updateAuthButtons();
+        
+        // Refresh current page if needed
+        if (currentPage === 'find') renderFindPage();
+        if (currentPage === 'groups') renderGroupsPage();
+        if (currentPage === 'profile') renderProfilePage();
+        if (currentPage === 'messages') renderMessagesPage();
+      }
+    };
+
+    (async () => {
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error('Failed to initialize Data SDK');
+        }
+      }
+    })();
+
+    // ===== UTILITY FUNCTIONS =====
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-red-500' : 'bg-sky-500';
+      toast.className = `toast ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2`;
+      toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' : 
+            type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' :
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
+        </svg>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function setLoading(loading) {
+      isLoading = loading;
+    }
+
+    function renderUserAvatar(user, className = 'w-12 h-12 rounded-full') {
+      if (user?.profile_photo) {
+        return `<img src="${user.profile_photo}" alt="${user.username}" class="${className} object-cover border border-white/10">`;
+      }
+
+      return `<div class="${className} bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-lg font-bold">${user?.username?.charAt(0)?.toUpperCase() || '?'}</div>`;
+    }
+
+    function handleDestinationSearchInput(value) {
+      destinationSearchInput = value;
+      renderFindPage();
+    }
+
+    async function handleProfilePhotoUpload(e) {
+      const file = e.target.files?.[0];
+      if (!file || !currentUser) return;
+
+      if (!file.type.startsWith('image/')) {
+        showToast('Please choose an image file', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const updatedUser = { ...currentUser, profile_photo: reader.result };
+        const result = await window.dataSdk.update(updatedUser);
+        if (result.isOk) {
+          currentUser = result.data || updatedUser;
+          updateAuthButtons();
+          showToast('Profile photo updated');
+          renderProfilePage();
+        } else {
+          showToast('Failed to update profile photo', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function updateAuthButtons() {
+      const container = document.getElementById('auth-buttons');
+      if (currentUser) {
+        container.innerHTML = `
+          <button onclick="navigateTo('profile')" class="btn-secondary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            ${renderUserAvatar(currentUser, 'w-8 h-8 rounded-full')}
+            <span class="hidden sm:inline">${currentUser.username}</span>
+          </button>
+          <button onclick="logout()" class="text-slate-400 hover:text-white text-sm">Logout</button>
+        `;
+      } else {
+        container.innerHTML = `
+          <button onclick="navigateTo('login')" class="btn-secondary px-4 py-2 rounded-lg text-sm">Login</button>
+          <button onclick="navigateTo('signup')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">Sign Up</button>
+        `;
+      }
+    }
+
+    function updateNavActive() {
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active', 'text-white');
+        if (link.dataset.page === currentPage) {
+          link.classList.add('active', 'text-white');
+        }
+      });
+    }
+
+    // ===== NAVIGATION =====
+    function navigateTo(page) {
+      currentPage = page;
+      updateNavActive();
+      
+      const main = document.getElementById('main-content');
+      main.innerHTML = '<div class="flex items-center justify-center py-20"><div class="animate-spin w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full"></div></div>';
+      
+      setTimeout(() => {
+        switch(page) {
+          case 'home': renderHomePage(); break;
+          case 'signup': renderSignupPage(); break;
+          case 'login': renderLoginPage(); break;
+          case 'preferences': renderPreferencesPage(); break;
+          case 'find': renderFindPage(); break;
+          case 'groups': renderGroupsPage(); break;
+          case 'suggestions': renderSuggestionsPage(); break;
+          case 'planner': renderPlannerPage(); break;
+          case 'profile': renderProfilePage(); break;
+          case 'messages': renderMessagesPage(); break;
+          case 'chat': renderChatPage(); break;
+          default: renderHomePage();
+        }
+      }, 200);
+    }
+
+    // ===== AUTH FUNCTIONS =====
+    async function signup(e) {
+      e.preventDefault();
+      if (isLoading) return;
+      
+      const username = document.getElementById('signup-username').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      
+      if (!username || !email || !password) {
+        showToast('Please fill all fields', 'error');
+        return;
+      }
+      
+      if (allUsers.find(u => u.email === email)) {
+        showToast('Email already registered', 'error');
+        return;
+      }
+      
+      if (allUsers.length >= 999) {
+        showToast('Maximum users reached', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+      
+      const result = await window.dataSdk.create({
+        type: 'user',
+        username,
+        email,
+        password,
+        budget: '',
+        travel_type: '',
+        days: 0,
+        season: 'any',
+        destination_type: '',
+        travel_mode: '',
+        accommodation: '',
+        gender_preference: 'any',
+        group_name: '',
+        group_members: '',
+        group_owner: '',
+        group_status: '',
+        request_from: '',
+        request_to: '',
+        request_status: '',
+        created_at: new Date().toISOString()
+      });
+      
+      setLoading(false);
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+      
+      if (result.isOk) {
+        currentUser = result.data;
+        updateAuthButtons();
+        showToast('Account created! Complete your preferences to continue.');
+        navigateTo('preferences');
+      } else {
+        showToast('Failed to create account', 'error');
+      }
+    }
+
+    async function login(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      
+      const user = allUsers.find(u => u.email === email && u.password === password);
+      
+      if (user) {
+        currentUser = user;
+        updateAuthButtons();
+        showToast(`Welcome back, ${user.username}!`);
+        
+        if (!user.budget) {
+          navigateTo('preferences');
+        } else {
+          navigateTo('find');
+        }
+      } else {
+        showToast('Invalid email or password', 'error');
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      updateAuthButtons();
+      showToast('Logged out successfully');
+      navigateTo('home');
+    }
+
+    // ===== PREFERENCES =====
+    async function savePreferences(e) {
+      e.preventDefault();
+      if (!currentUser || isLoading) return;
+      
+      const budget = document.getElementById('pref-budget').value;
+      const travel_type = document.getElementById('pref-travel-type').value;
+      const days = parseInt(document.getElementById('pref-days').value) || 0;
+      const season = document.getElementById('pref-season').value;
+      const destination_type = document.getElementById('pref-destination').value;
+      const travel_mode = document.getElementById('pref-mode').value;
+      const accommodation = document.getElementById('pref-accommodation').value;
+      const gender_preference = document.getElementById('pref-gender').value;
+      
+      if (!budget || !travel_type || !days || !season || !destination_type || !travel_mode || !accommodation || !gender_preference) {
+        showToast('Please fill all preferences', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+      
+      const updatedUser = { ...currentUser, budget, travel_type, days, season, destination_type, travel_mode, accommodation, gender_preference };
+      const result = await window.dataSdk.update(updatedUser);
+      
+      setLoading(false);
+      btn.disabled = false;
+      btn.textContent = 'Save Preferences';
+      
+      if (result.isOk) {
+        currentUser = updatedUser;
+        showToast('Preferences saved!');
+        if (e.target.id === 'profile-pref-form') {
+          renderProfilePage();
+        } else {
+          navigateTo('find');
+        }
+      } else {
+        showToast('Failed to save preferences', 'error');
+      }
+    }
+
+    // ===== MATCHING ALGORITHM =====
+    function calculateMatchScore(user1, user2) {
+      let score = 0;
+      let maxScore = 6;
+      
+      // Budget match (0-1)
+      if (user1.budget === user2.budget) score += 1;
+      else if (
+        (user1.budget === 'medium' && (user2.budget === 'low' || user2.budget === 'high')) ||
+        (user2.budget === 'medium' && (user1.budget === 'low' || user1.budget === 'high'))
+      ) score += 0.5;
+      
+      // Travel type match (0-1)
+      if (user1.travel_type === user2.travel_type) score += 1;
+      
+      // Days match (0-1)
+      const daysDiff = Math.abs(user1.days - user2.days);
+      if (daysDiff === 0) score += 1;
+      else if (daysDiff <= 2) score += 0.7;
+      else if (daysDiff <= 5) score += 0.3;
+      
+      // Season match (0-1)
+      if (user1.season === user2.season || user1.season === 'any' || user2.season === 'any') score += 1;
+      
+      // Destination type match (0-1)
+      if (user1.destination_type === user2.destination_type) score += 1;
+      
+      // Gender preference match (0-1)
+      const genderMatch = (user1.gender_preference === 'any' || user2.gender_preference === 'any' || 
+                          (user1.gender_preference === 'male' && user2.gender_preference === 'male') ||
+                          (user1.gender_preference === 'female' && user2.gender_preference === 'female'));
+      if (genderMatch) score += 1;
+      
+      return Math.round((score / maxScore) * 100);
+    }
+
+    function findMatches() {
+      if (!currentUser || !currentUser.budget) return [];
+      
+      const otherUsers = allUsers.filter(u => 
+        u.__backendId !== currentUser.__backendId && u.budget
+      );
+      
+      const matches = otherUsers.map(user => ({
+        user,
+        score: calculateMatchScore(currentUser, user),
+        matchType: getMatchType(currentUser, user)
+      }));
+      
+      return matches.sort((a, b) => b.score - a.score);
+    }
+
+    function getMatchType(user1, user2) {
+      const mode1 = user1.travel_mode;
+      const mode2 = user2.travel_mode;
+      
+      if (mode1 === 'solo' && mode2 === 'solo') return 'Solo + Solo';
+      if (mode1 === 'solo' && mode2 === 'group') return 'Solo + Group';
+      if (mode1 === 'group' && mode2 === 'solo') return 'Group + Solo';
+      if (mode1 === 'group' && mode2 === 'group') return 'Group + Group';
+      if (mode1 === 'join' || mode2 === 'join') return 'Join Group';
+      return 'Mixed';
+    }
+
+    // ===== GROUP FUNCTIONS =====
+    async function createGroup(e) {
+      e.preventDefault();
+      if (!currentUser || isLoading) return;
+      
+      const name = document.getElementById('group-name').value.trim();
+      const destination = document.getElementById('group-dest').value.trim();
+      
+      if (!name || !destination) {
+        showToast('Please enter group name and destination', 'error');
+        return;
+      }
+      
+      if (allGroups.length >= 999) {
+        showToast('Maximum groups reached', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+      
+      const result = await window.dataSdk.create({
+        type: 'group',
+        username: '',
+        email: '',
+        password: '',
+        budget: currentUser.budget,
+        travel_type: currentUser.travel_type,
+        days: currentUser.days,
+        season: currentUser.season,
+        destination_type: currentUser.destination_type,
+        travel_mode: '',
+        group_name: name,
+        group_destination: destination,
+        group_members: currentUser.username,
+        group_owner: currentUser.__backendId,
+        group_status: 'open',
+        request_from: '',
+        request_to: '',
+        request_status: '',
+        created_at: new Date().toISOString()
+      });
+      
+      setLoading(false);
+      btn.disabled = false;
+      btn.textContent = 'Create Group';
+      
+      if (result.isOk) {
+        showToast('Group created!');
+        document.getElementById('group-name').value = '';
+        document.getElementById('group-dest').value = '';
+        renderGroupsPage();
+      } else {
+        showToast('Failed to create group', 'error');
+      }
+    }
+
+    async function joinGroup(groupId) {
+      if (!currentUser || isLoading) return;
+      
+      const group = allGroups.find(g => g.__backendId === groupId);
+      if (!group) return;
+      
+      // Check if already a member
+      if (group.group_members?.includes(currentUser.username)) {
+        showToast('Already a member of this group', 'info');
+        return;
+      }
+      
+      // Check if group is full
+      if (group.group_size_current >= group.group_size_required) {
+        showToast('Group is full', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      
+      const members = group.group_members ? group.group_members.split(',') : [];
+      if (!members.includes(currentUser.username)) {
+        members.push(currentUser.username);
+      }
+      
+      const result = await window.dataSdk.update({
+        ...group,
+        group_members: members.join(','),
+        group_size_current: members.length
+      });
+      
+      setLoading(false);
+      
+      if (result.isOk) {
+        showToast('Request sent to group owner!');
+      } else {
+        showToast('Failed to join group', 'error');
+      }
+    }
+
+    async function sendRequest(toUserId) {
+      if (!currentUser || isLoading) return;
+      
+      const existingRequest = allRequests.find(r => 
+        r.request_from === currentUser.__backendId && r.request_to === toUserId
+      );
+      
+      if (existingRequest) {
+        showToast('Request already sent', 'info');
+        return;
+      }
+      
+      if (allRequests.length >= 999) {
+        showToast('Maximum requests reached', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      
+      const result = await window.dataSdk.create({
+        type: 'request',
+        username: '',
+        email: '',
+        password: '',
+        budget: '',
+        travel_type: '',
+        days: 0,
+        season: '',
+        destination_type: '',
+        travel_mode: '',
+        group_name: '',
+        group_members: '',
+        group_owner: '',
+        group_status: '',
+        request_from: currentUser.__backendId,
+        request_to: toUserId,
+        request_status: 'pending',
+        created_at: new Date().toISOString()
+      });
+      
+      setLoading(false);
+      
+      if (result.isOk) {
+        showToast('Request sent!');
+      } else {
+        showToast('Failed to send request', 'error');
+      }
+    }
+
+    async function handleRequest(requestId, accept) {
+      if (!currentUser || isLoading) return;
+      
+      const request = allRequests.find(r => r.__backendId === requestId);
+      if (!request) return;
+      
+      setLoading(true);
+      
+      const result = await window.dataSdk.update({
+        ...request,
+        request_status: accept ? 'accepted' : 'rejected'
+      });
+      
+      setLoading(false);
+      
+      if (result.isOk) {
+        showToast(accept ? 'Request accepted!' : 'Request declined');
+      } else {
+        showToast('Failed to update request', 'error');
+      }
+    }
+
+    // ===== MESSAGING FUNCTIONS =====
+    async function sendMessage(toUserId, toUsername, messageText) {
+      if (!currentUser || isLoading) return;
+      
+      if (!messageText.trim()) {
+        showToast('Message cannot be empty', 'error');
+        return;
+      }
+      
+      if (allMessages.length >= 999) {
+        showToast('Maximum messages reached', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      const conversationId = [currentUser.__backendId, toUserId].sort().join('_');
+      
+      const result = await window.dataSdk.create({
+        type: 'message',
+        username: '',
+        email: '',
+        password: '',
+        budget: '',
+        travel_type: '',
+        days: 0,
+        season: '',
+        destination_type: '',
+        travel_mode: '',
+        accommodation: '',
+        gender_preference: '',
+        group_name: '',
+        group_members: '',
+        group_owner: '',
+        group_status: '',
+        request_from: '',
+        request_to: '',
+        request_status: '',
+        message_from: currentUser.__backendId,
+        message_to: toUserId,
+        message_text: messageText,
+        conversation_id: conversationId,
+        created_at: new Date().toISOString()
+      });
+      
+      setLoading(false);
+      
+      if (result.isOk) {
+        if (document.getElementById('msg-input')) {
+          document.getElementById('msg-input').value = '';
+        }
+      } else {
+        showToast('Failed to send message', 'error');
+      }
+    }
+
+    function getConversationMessages(userId) {
+      if (!currentUser) return [];
+      const conversationId = [currentUser.__backendId, userId].sort().join('_');
+      return allMessages.filter(m => m.conversation_id === conversationId).sort((a, b) => 
+        new Date(a.created_at) - new Date(b.created_at)
+      );
+    }
+
+    // ===== AI SUGGESTIONS =====
+    function getDestinationSuggestions() {
+      if (!currentUser || !currentUser.budget) return [];
+      
+      const destinations = [
+        // South Indian Destinations
+        { name: 'Goa, India', type: 'beach', budget: 'low', season: 'winter', image: '🏖️', description: 'Beautiful beaches with vibrant nightlife', region: 'South India', tourist_spots: ['Baga Beach', 'Fort Aguada', 'Basilica of Bom Jesus'], hotels: ['Oceanside Resort', 'Beach Shack Hotel', 'Goa Heritage Inn'], activities: ['Beach volleyball', 'Water sports', 'Portuguese architecture tour'] },
+        { name: 'Kerala Backwaters', type: 'beach', budget: 'medium', season: 'monsoon', image: '🚣', description: 'Serene backwaters and houseboat cruises', region: 'South India', tourist_spots: ['Alleppey Beach', 'Vembanad Lake', 'Kumarakom'], hotels: ['Backwater Houseboat', 'Lake Palace Resort', 'Sunset Lagoon'], activities: ['Houseboat cruise', 'Fishing', 'Spice plantation tour'] },
+        { name: 'Munnar, Tamil Nadu', type: 'hill', budget: 'low', season: 'summer', image: '🏔️', description: 'Tea plantations and misty mountains', region: 'South India', tourist_spots: ['Tea Gardens', 'Kundala Lake', 'Anamudi Peak'], hotels: ['Mountain View Resort', 'Tea Estate Bungalow', 'Highland Inn'], activities: ['Tea plantation trek', 'Hiking', 'Photography'] },
+        { name: 'Ooty, Tamil Nadu', type: 'hill', budget: 'low', season: 'summer', image: '⛰️', description: 'Queen of the Nilgiris with Toy Train ride', region: 'South India', tourist_spots: ['Nilgiri Toy Train', 'Ooty Lake', 'Botanical Garden'], hotels: ['Mountain Resort', 'Lake View Cottage', 'Heritage Hotel'], activities: ['Toy train ride', 'Boating', 'Trekking'] },
+        { name: 'Coorg, Karnataka', type: 'forest', budget: 'low', season: 'monsoon', image: '🌲', description: 'Coffee plantations and misty valleys', region: 'South India', tourist_spots: ['Abbey Falls', 'Iruppu Falls', 'Nagarhole National Park'], hotels: ['Plantation Stay', 'Forest Cottage', 'Valley Resort'], activities: ['Coffee estate tour', 'Waterfall trek', 'Wildlife spotting'] },
+        { name: 'Pondicherry', type: 'city', budget: 'low', season: 'winter', image: '🏘️', description: 'French colonial charm and spiritual vibes', region: 'South India', tourist_spots: ['French Quarter', 'Auroville', 'Paradise Beach'], hotels: ['Heritage Hotel', 'Beach Villa', 'Spiritual Retreat'], activities: ['Architecture tour', 'Beach walk', 'Yoga session'] },
+        { name: 'Hampi, Karnataka', type: 'city', budget: 'low', season: 'winter', image: '🏛️', description: 'Ancient temples and ruins', region: 'South India', tourist_spots: ['Virupaksha Temple', 'Krishna Temple', 'Lotus Mahal'], hotels: ['Heritage Stay', 'Budget Resort', 'Riverside Cottage'], activities: ['Temple tour', 'Rock climbing', 'Heritage walk'] },
+        { name: 'Mysore, Karnataka', type: 'city', budget: 'low', season: 'autumn', image: '👑', description: 'Palace city with royal heritage', region: 'South India', tourist_spots: ['Mysore Palace', 'Chamundi Hill', 'Brindavan Gardens'], hotels: ['Palace View Hotel', 'Royal Resort', 'Heritage Inn'], activities: ['Palace tour', 'Temple visit', 'Silk shopping'] },
+        { name: 'Madurai, Tamil Nadu', type: 'city', budget: 'low', season: 'winter', image: '🕉️', description: 'Ancient temple city with spiritual essence', region: 'South India', tourist_spots: ['Meenakshi Temple', 'Vaigai River', 'Thirumalai Nayak Palace'], hotels: ['Temple View Hotel', 'Budget Inn', 'Heritage Hotel'], activities: ['Temple darshan', 'Market walk', 'Local food tour'] },
+        
+        // International & Other Indian
+        { name: 'Bali, Indonesia', type: 'beach', budget: 'medium', season: 'summer', image: '🏝️', description: 'Tropical paradise with stunning beaches and rich culture' },
+        { name: 'Swiss Alps', type: 'hill', budget: 'high', season: 'winter', image: '🏔️', description: 'Majestic mountains perfect for skiing and hiking' },
+        { name: 'Tokyo, Japan', type: 'city', budget: 'high', season: 'spring', image: '🗼', description: 'Vibrant metropolis blending tradition and modernity' },
+        { name: 'Manali, India', type: 'hill', budget: 'low', season: 'summer', image: '⛰️', description: 'Scenic hill station in the Himalayas' },
+        { name: 'Barcelona, Spain', type: 'city', budget: 'medium', season: 'spring', image: '🏛️', description: 'Art, architecture, and Mediterranean charm' },
+        { name: 'Black Forest, Germany', type: 'forest', budget: 'medium', season: 'autumn', image: '🌲', description: 'Enchanting forest with fairy-tale villages' },
+        { name: 'Maldives', type: 'beach', budget: 'high', season: 'winter', image: '🐠', description: 'Luxury overwater villas and crystal clear waters' },
+        { name: 'Shimla, India', type: 'hill', budget: 'low', season: 'summer', image: '🏘️', description: 'Colonial charm in the Himalayan foothills' },
+        { name: 'New York, USA', type: 'city', budget: 'high', season: 'autumn', image: '🗽', description: 'The city that never sleeps' },
+        { name: 'Costa Rica Jungle', type: 'forest', budget: 'medium', season: 'summer', image: '🦜', description: 'Biodiversity hotspot with zip-lines and wildlife' }
+      ];
+      
+      return destinations.map(dest => {
+        let score = 0;
+        if (dest.type === currentUser.destination_type) score += 40;
+        if (dest.budget === currentUser.budget) score += 30;
+        if (dest.season === currentUser.season) score += 30;
+        return { ...dest, score };
+      }).sort((a, b) => b.score - a.score);
+    }
+    
+    function getDetailedDestinationInfo(destinationName) {
+      const allDestinations = [
+        { name: 'Goa, India', type: 'beach', budget: 'low', season: 'winter', image: '🏖️', description: 'Beautiful beaches with vibrant nightlife', region: 'South India', tourist_spots: ['Baga Beach', 'Fort Aguada', 'Basilica of Bom Jesus', 'Palolem Beach', 'Church of St. Cajetan'], hotels: ['Oceanside Resort', 'Beach Shack Hotel', 'Goa Heritage Inn', 'Taj Holiday Village', 'Leela Goa'], activities: ['Beach volleyball', 'Water sports', 'Portuguese architecture tour', 'Spice market visit', 'Local cuisine tasting'] },
+        { name: 'Kerala Backwaters', type: 'beach', budget: 'medium', season: 'monsoon', image: '🚣', description: 'Serene backwaters and houseboat cruises', region: 'South India', tourist_spots: ['Alleppey Beach', 'Vembanad Lake', 'Kumarakom', 'Kochi Fort', 'Chinese Fishing Nets'], hotels: ['Backwater Houseboat', 'Lake Palace Resort', 'Sunset Lagoon', 'Oberoi Backwaters', 'Kumarakom Lake Resort'], activities: ['Houseboat cruise', 'Fishing', 'Spice plantation tour', 'Ayurveda treatment', 'Kathakali dance show'] },
+        { name: 'Munnar, Tamil Nadu', type: 'hill', budget: 'low', season: 'summer', image: '🏔️', description: 'Tea plantations and misty mountains', region: 'South India', tourist_spots: ['Tea Gardens', 'Kundala Lake', 'Anamudi Peak', 'Mattupetty Dam', 'Echo Point'], hotels: ['Mountain View Resort', 'Tea Estate Bungalow', 'Highland Inn', 'The Tall Trees', 'Misty Mountain Resort'], activities: ['Tea plantation trek', 'Hiking', 'Photography', 'Lake boating', 'Nature walk'] },
+        { name: 'Ooty, Tamil Nadu', type: 'hill', budget: 'low', season: 'summer', image: '⛰️', description: 'Queen of the Nilgiris with Toy Train ride', region: 'South India', tourist_spots: ['Nilgiri Toy Train', 'Ooty Lake', 'Botanical Garden', 'Government Rose Garden', 'Doddabetta Peak'], hotels: ['Mountain Resort', 'Lake View Cottage', 'Heritage Hotel', 'The Naini Valley', 'Savoy Hotel'], activities: ['Toy train ride', 'Boating', 'Trekking', 'Rose garden visit', 'Strawberry picking'] },
+        { name: 'Coorg, Karnataka', type: 'forest', budget: 'low', season: 'monsoon', image: '🌲', description: 'Coffee plantations and misty valleys', region: 'South India', tourist_spots: ['Abbey Falls', 'Iruppu Falls', 'Nagarhole National Park', 'Talakaveri', 'Brahmagiri Wildlife Sanctuary'], hotels: ['Plantation Stay', 'Forest Cottage', 'Valley Resort', 'The Tamara Coorg', 'Evolve Back'], activities: ['Coffee estate tour', 'Waterfall trek', 'Wildlife spotting', 'Monsoon trek', 'Bird watching'] },
+        { name: 'Pondicherry', type: 'city', budget: 'low', season: 'winter', image: '🏘️', description: 'French colonial charm and spiritual vibes', region: 'South India', tourist_spots: ['French Quarter', 'Auroville', 'Paradise Beach', 'Promenade Beach', 'Sri Aurobindo Ashram'], hotels: ['Heritage Hotel', 'Beach Villa', 'Spiritual Retreat', 'The Promenade', 'Dupleix Hotel'], activities: ['Architecture tour', 'Beach walk', 'Yoga session', 'Meditation retreat', 'French cuisine dining'] },
+        { name: 'Hampi, Karnataka', type: 'city', budget: 'low', season: 'winter', image: '🏛️', description: 'Ancient temples and ruins', region: 'South India', tourist_spots: ['Virupaksha Temple', 'Krishna Temple', 'Lotus Mahal', 'Royal Enclosure', 'Hemakuta Hill'], hotels: ['Heritage Stay', 'Budget Resort', 'Riverside Cottage', 'Evolve Back Hampi', 'Agni Hotel'], activities: ['Temple tour', 'Rock climbing', 'Heritage walk', 'Sunset viewing', 'Local market explore'] },
+        { name: 'Mysore, Karnataka', type: 'city', budget: 'low', season: 'autumn', image: '👑', description: 'Palace city with royal heritage', region: 'South India', tourist_spots: ['Mysore Palace', 'Chamundi Hill', 'Brindavan Gardens', 'St. Philomena\'s Church', 'Jaganmohan Palace'], hotels: ['Palace View Hotel', 'Royal Resort', 'Heritage Inn', 'The Jungle Lodges', 'Radisson Blu'], activities: ['Palace tour', 'Temple visit', 'Silk shopping', 'Garden walk', 'Local market tour'] },
+        { name: 'Madurai, Tamil Nadu', type: 'city', budget: 'low', season: 'winter', image: '🕉️', description: 'Ancient temple city with spiritual essence', region: 'South India', tourist_spots: ['Meenakshi Temple', 'Vaigai River', 'Thirumalai Nayak Palace', 'Tirupparankundram', 'Azhagar Koil'], hotels: ['Temple View Hotel', 'Budget Inn', 'Heritage Hotel', 'GRT Hotel', 'Supreme Hotel'], activities: ['Temple darshan', 'Market walk', 'Local food tour', 'Evening Aarti', 'Flower market visit'] }
+      ];
+      
+      return allDestinations.find(d => d.name === destinationName);
+    }
+    
+    function generateDestinationDetailedPlan(destinationName, days) {
+      const destInfo = getDetailedDestinationInfo(destinationName);
+      if (!destInfo) return [];
+      
+      const spots = destInfo.tourist_spots || [];
+      const activities = destInfo.activities || [];
+      
+      const plan = [];
+      for (let i = 1; i <= days; i++) {
+        let dayActivities = [];
+        
+        if (i === 1) {
+          dayActivities = ['Arrive at destination', 'Check into hotel', 'Rest and freshen up', `Evening: ${activities[0] || 'Explore local area'}`];
+        } else if (i === days) {
+          dayActivities = ['Final exploration', 'Local market shopping', 'Souvenir hunting', 'Checkout and depart'];
+        } else {
+          const spotIndex = (i - 2) % spots.length;
+          const actIndex = (i - 2) % activities.length;
+          dayActivities = [
+            `Visit: ${spots[spotIndex]}`,
+            `Activity: ${activities[actIndex]}`,
+            `Lunch at local restaurant`,
+            `Evening exploration`
+          ];
+        }
+        
+        plan.push({
+          day: i,
+          title: `Day ${i} - ${destInfo.name}`,
+          activities: dayActivities,
+          spots: [spots[(i-1) % spots.length]],
+          hotels: [destInfo.hotels[(i-1) % destInfo.hotels.length]]
+        });
+      }
+      return plan;
+    }
+
+    // ===== PLANNER =====
+    function generateTravelPlan(destination, days) {
+      const activities = {
+        beach: ['Visit the beach', 'Snorkeling', 'Beach volleyball', 'Sunset cruise', 'Seafood dinner', 'Water sports', 'Island hopping'],
+        hill: ['Mountain trek', 'Cable car ride', 'Visit viewpoint', 'Nature walk', 'Local market visit', 'Photography tour', 'Camping'],
+        city: ['City tour', 'Museum visit', 'Local food tour', 'Shopping', 'Night market', 'Historical sites', 'Cultural show'],
+        forest: ['Jungle safari', 'Bird watching', 'Nature trail', 'River rafting', 'Camping', 'Wildlife photography', 'Tribal village visit']
+      };
+      
+      const type = currentUser?.destination_type || 'city';
+      const typeActivities = activities[type] || activities.city;
+      
+      const plan = [];
+      for (let i = 1; i <= days; i++) {
+        if (i === 1) {
+          plan.push({ day: i, title: 'Arrival Day', activities: ['Arrive at destination', 'Check into hotel', 'Rest and freshen up', 'Evening exploration'] });
+        } else if (i === days) {
+          plan.push({ day: i, title: 'Departure Day', activities: ['Pack and checkout', 'Last minute shopping', 'Head to airport/station', 'Return journey'] });
+        } else {
+          const dayActivities = [];
+          for (let j = 0; j < 4; j++) {
+            dayActivities.push(typeActivities[(i + j) % typeActivities.length]);
+          }
+          plan.push({ day: i, title: `Day ${i} - Exploration`, activities: dayActivities });
+        }
+      }
+      return plan;
+    }
+
+    // ===== PAGE RENDERERS =====
+    function renderHomePage() {
+      const config = window.elementSdk?.config || defaultConfig;
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in">
+          <!-- Hero Section -->
+          <section class="relative overflow-hidden py-20 px-4">
+            <div class="absolute inset-0 overflow-hidden">
+              <div class="absolute top-20 left-10 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl"></div>
+              <div class="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto text-center relative z-10">
+              <div class="inline-flex items-center gap-2 bg-white/5 backdrop-blur px-4 py-2 rounded-full mb-6">
+                <span class="pulse-dot w-2 h-2 bg-emerald-400 rounded-full"></span>
+                <span class="text-sm text-slate-300">Find your travel buddy today</span>
+              </div>
+              
+              <h1 id="hero-title" class="font-display text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-sky-200 to-indigo-200 bg-clip-text text-transparent">
+                ${config.app_title || defaultConfig.app_title}
+              </h1>
+              
+              <p id="hero-tagline" class="text-xl md:text-2xl text-slate-300 mb-8 max-w-2xl mx-auto">
+                ${config.tagline || defaultConfig.tagline}
+              </p>
+              
+              <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="navigateTo('${currentUser ? 'find' : 'signup'}')" class="btn-primary px-8 py-4 rounded-xl text-lg font-semibold flex items-center justify-center gap-2">
+                  <span>Get Started</span>
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                  </svg>
+                </button>
+                <button onclick="navigateTo('suggestions')" class="btn-secondary px-8 py-4 rounded-xl text-lg font-medium">
+                  Explore Destinations
+                </button>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Features Section -->
+          <section class="py-20 px-4">
+            <div class="max-w-6xl mx-auto">
+              <h2 class="font-display text-3xl md:text-4xl font-bold text-center mb-12">How It Works</h2>
+              
+              <div class="grid md:grid-cols-3 gap-8">
+                <div class="card-gradient rounded-2xl p-8 glow match-card">
+                  <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-semibold mb-3">Create Profile</h3>
+                  <p class="text-slate-400">Sign up and set your travel preferences including budget, destination type, and travel style.</p>
+                </div>
+                
+                <div class="card-gradient rounded-2xl p-8 glow match-card">
+                  <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-semibold mb-3">Find Matches</h3>
+                  <p class="text-slate-400">Our smart algorithm finds travellers with similar interests and travel plans.</p>
+                </div>
+                
+                <div class="card-gradient rounded-2xl p-8 glow match-card">
+                  <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-semibold mb-3">Travel Together</h3>
+                  <p class="text-slate-400">Connect with your matches, plan your trip with AI suggestions, and explore the world!</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Stats Section -->
+          <section class="py-16 px-4 border-t border-white/10">
+            <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div>
+                <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">${allUsers.length}</div>
+                <div class="text-slate-400 mt-1">Travellers</div>
+              </div>
+              <div>
+                <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">${allGroups.length}</div>
+                <div class="text-slate-400 mt-1">Groups</div>
+              </div>
+              <div>
+                <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">12+</div>
+                <div class="text-slate-400 mt-1">Destinations</div>
+              </div>
+              <div>
+                <div class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">AI</div>
+                <div class="text-slate-400 mt-1">Powered</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    function renderSignupPage() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in min-h-[80%] flex items-center justify-center py-12 px-4">
+          <div class="w-full max-w-md">
+            <div class="card-gradient rounded-2xl p-8 glow">
+              <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                  </svg>
+                </div>
+                <h1 class="font-display text-2xl font-bold">Create Account</h1>
+                <p class="text-slate-400 mt-2">Join thousands of travellers worldwide</p>
+              </div>
+              
+              <form onsubmit="signup(event)" class="space-y-5">
+                <div>
+                  <label for="signup-username" class="block text-sm font-medium text-slate-300 mb-2">Username</label>
+                  <input type="text" id="signup-username" required
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                    placeholder="Enter your username">
+                </div>
+                
+                <div>
+                  <label for="signup-email" class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                  <input type="email" id="signup-email" required
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                    placeholder="Enter your email">
+                </div>
+                
+                <div>
+                  <label for="signup-password" class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                  <input type="password" id="signup-password" required minlength="6"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                    placeholder="Create a password">
+                </div>
+                
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-semibold">
+                  Create Account
+                </button>
+              </form>
+              
+              <p class="text-center text-slate-400 mt-6">
+                Already have an account? 
+                <button onclick="navigateTo('login')" class="text-sky-400 hover:text-sky-300 font-medium">Login</button>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLoginPage() {
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in min-h-[80%] flex items-center justify-center py-12 px-4">
+          <div class="w-full max-w-md">
+            <div class="card-gradient rounded-2xl p-8 glow">
+              <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                  </svg>
+                </div>
+                <h1 class="font-display text-2xl font-bold">Welcome Back</h1>
+                <p class="text-slate-400 mt-2">Login to continue your journey</p>
+              </div>
+              
+              <form onsubmit="login(event)" class="space-y-5">
+                <div>
+                  <label for="login-email" class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                  <input type="email" id="login-email" required
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                    placeholder="Enter your email">
+                </div>
+                
+                <div>
+                  <label for="login-password" class="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                  <input type="password" id="login-password" required
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                    placeholder="Enter your password">
+                </div>
+                
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-semibold">
+                  Login
+                </button>
+              </form>
+              
+              <p class="text-center text-slate-400 mt-6">
+                Don't have an account? 
+                <button onclick="navigateTo('signup')" class="text-sky-400 hover:text-sky-300 font-medium">Sign Up</button>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPreferencesPage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-2xl mx-auto">
+            <div class="text-center mb-8">
+              <h1 class="font-display text-3xl font-bold">Travel Preferences</h1>
+              <p class="text-slate-400 mt-2">Tell us about your ideal trip</p>
+            </div>
+            
+            <div class="card-gradient rounded-2xl p-8 glow">
+              <form onsubmit="savePreferences(event)" class="space-y-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label for="pref-budget" class="block text-sm font-medium text-slate-300 mb-2">Budget</label>
+                    <select id="pref-budget" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select budget</option>
+                      <option value="low" class="bg-slate-800" ${currentUser.budget === 'low' ? 'selected' : ''}>Low (Budget-friendly)</option>
+                      <option value="medium" class="bg-slate-800" ${currentUser.budget === 'medium' ? 'selected' : ''}>Medium (Moderate)</option>
+                      <option value="high" class="bg-slate-800" ${currentUser.budget === 'high' ? 'selected' : ''}>High (Luxury)</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-travel-type" class="block text-sm font-medium text-slate-300 mb-2">Travel Type</label>
+                    <select id="pref-travel-type" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select type</option>
+                      <option value="adventure" class="bg-slate-800" ${currentUser.travel_type === 'adventure' ? 'selected' : ''}>Adventure</option>
+                      <option value="relax" class="bg-slate-800" ${currentUser.travel_type === 'relax' ? 'selected' : ''}>Relaxation</option>
+                      <option value="family" class="bg-slate-800" ${currentUser.travel_type === 'family' ? 'selected' : ''}>Family</option>
+                      <option value="solo" class="bg-slate-800" ${currentUser.travel_type === 'solo' ? 'selected' : ''}>Solo Exploration</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-days" class="block text-sm font-medium text-slate-300 mb-2">Number of Days</label>
+                    <input type="number" id="pref-days" required min="1" max="30"
+                      value="${currentUser.days || ''}"
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                      placeholder="Enter number of days">
+                  </div>
+                  
+                  <div>
+                    <label for="pref-season" class="block text-sm font-medium text-slate-300 mb-2">Preferred Season</label>
+                    <select id="pref-season" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select season</option>
+                      <option value="summer" class="bg-slate-800" ${currentUser.season === 'summer' ? 'selected' : ''}>Summer</option>
+                      <option value="winter" class="bg-slate-800" ${currentUser.season === 'winter' ? 'selected' : ''}>Winter</option>
+                      <option value="spring" class="bg-slate-800" ${currentUser.season === 'spring' ? 'selected' : ''}>Spring</option>
+                      <option value="autumn" class="bg-slate-800" ${currentUser.season === 'autumn' ? 'selected' : ''}>Autumn</option>
+                      <option value="monsoon" class="bg-slate-800" ${currentUser.season === 'monsoon' ? 'selected' : ''}>Monsoon</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-destination" class="block text-sm font-medium text-slate-300 mb-2">Destination Type</label>
+                    <select id="pref-destination" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select destination</option>
+                      <option value="beach" class="bg-slate-800" ${currentUser.destination_type === 'beach' ? 'selected' : ''}>Beach</option>
+                      <option value="hill" class="bg-slate-800" ${currentUser.destination_type === 'hill' ? 'selected' : ''}>Hill Station</option>
+                      <option value="city" class="bg-slate-800" ${currentUser.destination_type === 'city' ? 'selected' : ''}>City</option>
+                      <option value="forest" class="bg-slate-800" ${currentUser.destination_type === 'forest' ? 'selected' : ''}>Forest</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-mode" class="block text-sm font-medium text-slate-300 mb-2">Travel Mode</label>
+                    <select id="pref-mode" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select mode</option>
+                      <option value="solo" class="bg-slate-800" ${currentUser.travel_mode === 'solo' ? 'selected' : ''}>Solo Traveller</option>
+                      <option value="group" class="bg-slate-800" ${currentUser.travel_mode === 'group' ? 'selected' : ''}>With My Group</option>
+                      <option value="join" class="bg-slate-800" ${currentUser.travel_mode === 'join' ? 'selected' : ''}>Looking to Join</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="pref-accommodation" class="block text-sm font-medium text-slate-300 mb-2">Accommodation Type</label>
+                    <select id="pref-accommodation" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select accommodation</option>
+                      <option value="hotel" class="bg-slate-800" ${currentUser.accommodation === 'hotel' ? 'selected' : ''}>Hotel</option>
+                      <option value="airbnb" class="bg-slate-800" ${currentUser.accommodation === 'airbnb' ? 'selected' : ''}>Airbnb</option>
+                      <option value="hostel" class="bg-slate-800" ${currentUser.accommodation === 'hostel' ? 'selected' : ''}>Hostel</option>
+                      <option value="camping" class="bg-slate-800" ${currentUser.accommodation === 'camping' ? 'selected' : ''}>Camping</option>
+                      <option value="resort" class="bg-slate-800" ${currentUser.accommodation === 'resort' ? 'selected' : ''}>Resort</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="pref-gender" class="block text-sm font-medium text-slate-300 mb-2">Gender Preference</label>
+                    <select id="pref-gender" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select preference</option>
+                      <option value="any" class="bg-slate-800" ${currentUser.gender_preference === 'any' ? 'selected' : ''}>Any</option>
+                      <option value="male" class="bg-slate-800" ${currentUser.gender_preference === 'male' ? 'selected' : ''}>Male</option>
+                      <option value="female" class="bg-slate-800" ${currentUser.gender_preference === 'female' ? 'selected' : ''}>Female</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-semibold mt-6">
+                  Save Preferences
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFindPage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      if (!currentUser.budget) {
+        showToast('Please set your preferences first', 'info');
+        navigateTo('preferences');
+        return;
+      }
+      
+      const selectedDest = currentUser.selected_destination || '';
+      const destinationSearchQuery = document.getElementById('destination-search')?.value?.toLowerCase() || '';
+      const filteredDestinations = destinationOptions.filter(destination =>
+        destination.toLowerCase().includes(destinationSearchQuery)
+      );
+      
+      let matches = findMatches();
+      
+      if (selectedDest) {
+        matches = matches.filter(m => {
+          if (!m.user.selected_destination && !selectedDest) return true;
+          return m.user.selected_destination === selectedDest;
+        });
+      }
+      
+      const groupsForDest = selectedDest ? allGroups.filter(g => g.group_destination === selectedDest && g.group_status === 'open') : [];
+      
+      const main = document.getElementById('main-content');
+      
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-8">
+              <h1 class="font-display text-3xl font-bold">Find Travel Companions</h1>
+              <p class="text-slate-400 mt-2">Discover travellers who match your preferences</p>
+            </div>
+            
+            <!-- Search & Filter Section -->
+            <div class="card-gradient rounded-2xl p-6 mb-8 glow">
+              <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2">Find a Place</label>
+                  <input type="text" id="destination-search" placeholder="Type a place name..." value="${destinationSearchInput || selectedDest}"
+                    oninput="handleDestinationSearchInput(this.value)"
+                    class="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 transition">
+                  ${destinationSearchQuery ? `
+                    <div class="mt-3 space-y-2">
+                      ${filteredDestinations.length > 0 ? filteredDestinations.map(destination => `
+                        <button type="button" onclick="updateDestination('${destination}')" class="w-full text-left px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition">${destination}</button>
+                      `).join('') : '<div class="px-4 py-2 bg-white/5 rounded-lg text-sm text-slate-400">No matching destinations found</div>'}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              
+              <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-sky-500/20 text-sky-300 rounded-full text-xs">${currentUser.budget}</span>
+                <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs">${currentUser.travel_type}</span>
+                <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs">${currentUser.days} days</span>
+                <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs">${currentUser.season}</span>
+                <span class="px-3 py-1 bg-rose-500/20 text-rose-300 rounded-full text-xs">${currentUser.destination_type}</span>
+              </div>
+            </div>
+            
+            ${selectedDest && groupsForDest.length > 0 ? `
+              <div class="card-gradient rounded-2xl p-6 mb-8 glow">
+                <h2 class="font-semibold text-xl mb-4 flex items-center gap-2">
+                  <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                  </svg>
+                  Groups Going to ${activeDestination}
+                </h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  ${groupsForDest.map(group => `
+                    <div class="bg-white/5 rounded-xl p-4 border border-purple-500/20">
+                      <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-sm font-bold">
+                          ${group.group_members?.split(',')[0]?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div>
+                          <h3 class="font-semibold text-sm">${group.group_name}</h3>
+                          <span class="text-xs text-slate-400">${group.group_size_current || 1}/${group.group_size_required} members</span>
+                        </div>
+                      </div>
+                      <p class="text-sm text-slate-300 mb-3 px-3 py-2 bg-white/5 rounded-lg">Destination: ${group.group_destination || selectedDest}</p>
+                      <button onclick="joinGroup('${group.__backendId}')" class="w-full btn-primary py-2 rounded-lg text-sm font-medium">
+                        Join Group
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${matches.length === 0 ? `
+                <div class="col-span-full text-center py-12">
+                  <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-semibold text-slate-300">No matches found</h3>
+                  <p class="text-slate-500 mt-2">Try adjusting your destination search</p>
+                </div>
+              ` : matches.map(match => `
+                <div class="card-gradient rounded-2xl p-6 glow match-card relative">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-lg font-bold">
+                        ${match.user.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 class="font-semibold">${match.user.username}</h3>
+                        <span class="text-sm text-slate-400">${match.matchType}</span>
+                      </div>
+                    </div>
+                    
+                    <div class="relative w-14 h-14">
+                      <div class="score-ring absolute inset-0 rounded-full" style="--score: ${match.score}"></div>
+                      <div class="absolute inset-1 bg-slate-900 rounded-full flex items-center justify-center">
+                        <span class="text-sm font-bold text-sky-400">${match.score}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2 mb-4">
+                    <div class="flex items-center gap-2 text-sm text-slate-300">
+                      <span class="w-20 text-slate-500">Budget:</span>
+                      <span class="px-2 py-0.5 bg-white/5 rounded">${match.user.budget}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-slate-300">
+                      <span class="w-20 text-slate-500">Type:</span>
+                      <span class="px-2 py-0.5 bg-white/5 rounded">${match.user.travel_type}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-slate-300">
+                      <span class="w-20 text-slate-500">Days:</span>
+                      <span class="px-2 py-0.5 bg-white/5 rounded">${match.user.days}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-slate-300">
+                      <span class="w-20 text-slate-500">Mode:</span>
+                      <span class="px-2 py-0.5 bg-white/5 rounded capitalize">${match.user.travel_mode}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex gap-2">
+                    <button onclick="startChat('${match.user.__backendId}', '${match.user.username}')" 
+                      class="flex-1 btn-primary py-2 rounded-lg text-sm font-medium">
+                      Chat
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    async function updateDestination(destination) {
+      if (!currentUser || isLoading) return;
+      destinationSearchInput = destination;
+      
+      setLoading(true);
+      const updatedUser = { ...currentUser, selected_destination: destination };
+      const result = await window.dataSdk.update(updatedUser);
+      setLoading(false);
+      
+      if (result.isOk) {
+        currentUser = updatedUser;
+        renderFindPage();
+      } else {
+        showToast('Failed to update destination', 'error');
+      }
+    }
+
+    function renderGroupsPage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      const main = document.getElementById('main-content');
+      const myGroups = allGroups.filter(g => g.group_owner === currentUser.__backendId || g.group_members?.includes(currentUser.username));
+      const availableGroups = allGroups.filter(g => g.group_status === 'open' && !g.group_members?.includes(currentUser.username));
+      
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-8">
+              <h1 class="font-display text-3xl font-bold">Travel Groups</h1>
+              <p class="text-slate-400 mt-2">Create or join groups for your adventure</p>
+            </div>
+            
+            <!-- Create Group -->
+            <div class="card-gradient rounded-2xl p-6 mb-8 glow">
+              <h3 class="font-semibold mb-4">✨ Create New Group</h3>
+              <form onsubmit="createGroup(event)" class="space-y-3">
+                <input type="text" id="group-name" required
+                  class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                  placeholder="Enter group name">
+                <select id="group-dest" required
+                  class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                  <option value="" class="bg-slate-800">Select destination</option>
+                  <option value="Goa, India" class="bg-slate-800">🏖️ Goa, India</option>
+                  <option value="Kerala Backwaters" class="bg-slate-800">🚣 Kerala Backwaters</option>
+                  <option value="Munnar, Tamil Nadu" class="bg-slate-800">🏔️ Munnar, Tamil Nadu</option>
+                  <option value="Ooty, Tamil Nadu" class="bg-slate-800">⛰️ Ooty, Tamil Nadu</option>
+                  <option value="Coorg, Karnataka" class="bg-slate-800">🌲 Coorg, Karnataka</option>
+                  <option value="Pondicherry" class="bg-slate-800">🏘️ Pondicherry</option>
+                  <option value="Hampi, Karnataka" class="bg-slate-800">🏛️ Hampi, Karnataka</option>
+                  <option value="Mysore, Karnataka" class="bg-slate-800">👑 Mysore, Karnataka</option>
+                  <option value="Madurai, Tamil Nadu" class="bg-slate-800">🕉️ Madurai, Tamil Nadu</option>
+                </select>
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2">👥 Number of Travellers Required</label>
+                  <input type="number" id="group-size" required min="2" max="20"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition"
+                    placeholder="e.g., 4">
+                </div>
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-medium">
+                  Create Group
+                </button>
+              </form>
+            </div>
+            
+            <!-- My Groups -->
+            <div class="mb-8">
+              <h2 class="text-xl font-semibold mb-4">👤 My Groups</h2>
+              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${myGroups.length === 0 ? `
+                  <div class="col-span-full card-gradient rounded-xl p-8 text-center">
+                    <p class="text-slate-400">You haven't created or joined any groups yet.</p>
+                  </div>
+                ` : myGroups.map(group => `
+                  <div class="card-gradient rounded-2xl p-6 glow match-card">
+                    <div class="flex items-center gap-3 mb-4">
+                      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 class="font-semibold">${group.group_name}</h3>
+                        <span class="text-sm text-slate-400">${group.group_size_current || 1}/${group.group_size_required} members</span>
+                      </div>
+                    </div>
+                    
+                    <div class="bg-white/5 rounded-lg p-3 mb-4">
+                      <p class="text-xs text-slate-400">📍 Destination</p>
+                      <p class="font-medium">${group.group_destination}</p>
+                    </div>
+                    
+                    <div class="text-xs text-slate-400">
+                      <p>🎯 ${group.destination_type} • ${group.travel_type} • ${group.days} days</p>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <!-- Available Groups -->
+            <div>
+              <h2 class="text-xl font-semibold mb-4">🌟 Available Groups to Join</h2>
+              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${availableGroups.length === 0 ? `
+                  <div class="col-span-full card-gradient rounded-xl p-8 text-center">
+                    <p class="text-slate-400">No available groups at the moment.</p>
+                  </div>
+                ` : availableGroups.map(group => `
+                  <div class="card-gradient rounded-2xl p-6 glow match-card">
+                    <div class="flex items-center gap-3 mb-4">
+                      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.6-3a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 class="font-semibold">${group.group_name}</h3>
+                        <span class="text-sm text-slate-400">${group.group_size_current || 1}/${group.group_size_required} members</span>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2 text-sm text-slate-300 mb-4">
+                      <p class="px-2 py-1 bg-white/5 rounded">📍 ${group.group_destination}</p>
+                      <p><span class="text-slate-500">🎯</span> ${group.travel_type} • ${group.days} days</p>
+                    </div>
+                    
+                    <button onclick="joinGroup('${group.__backendId}')" 
+                      class="w-full btn-primary py-2 rounded-lg text-sm font-medium">
+                      Join Group
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function createGroup(e) {
+      e.preventDefault();
+      if (!currentUser || isLoading) return;
+      
+      const name = document.getElementById('group-name').value.trim();
+      const destination = document.getElementById('group-dest').value.trim();
+      const groupSize = parseInt(document.getElementById('group-size').value) || 0;
+      
+      if (!name || !destination || !groupSize) {
+        showToast('Please fill all fields', 'error');
+        return;
+      }
+      
+      if (allGroups.length >= 999) {
+        showToast('Maximum groups reached', 'error');
+        return;
+      }
+      
+      setLoading(true);
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full mx-auto"></div>';
+      
+      const result = await window.dataSdk.create({
+        type: 'group',
+        username: '',
+        email: '',
+        password: '',
+        budget: currentUser.budget,
+        travel_type: currentUser.travel_type,
+        days: currentUser.days,
+        season: currentUser.season,
+        destination_type: currentUser.destination_type,
+        travel_mode: '',
+        accommodation: '',
+        gender_preference: '',
+        group_name: name,
+        group_destination: destination,
+        group_members: currentUser.username,
+        group_owner: currentUser.__backendId,
+        group_size_required: groupSize,
+        group_size_current: 1,
+        group_status: 'open',
+        request_from: '',
+        request_to: '',
+        request_status: '',
+        created_at: new Date().toISOString()
+      });
+      
+      setLoading(false);
+      btn.disabled = false;
+      btn.textContent = 'Create Group';
+      
+      if (result.isOk) {
+        showToast('Group created!');
+        document.getElementById('group-name').value = '';
+        document.getElementById('group-dest').value = '';
+        document.getElementById('group-size').value = '';
+        renderGroupsPage();
+      } else {
+        showToast('Failed to create group', 'error');
+      }
+    }
+
+    function renderSuggestionsPage() {
+      const suggestions = currentUser ? getDestinationSuggestions() : [];
+      const main = document.getElementById('main-content');
+      const searchValue = document.getElementById('ai-place-search')?.value || aiPlaceDetails?.place_query || '';
+      
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-8">
+              <div class="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500/20 to-indigo-500/20 px-4 py-2 rounded-full mb-4">
+                <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <span class="text-sm">AI-Powered Suggestions</span>
+              </div>
+              <h1 class="font-display text-3xl font-bold">Destination Suggestions</h1>
+              <p class="text-slate-400 mt-2">Search any place in the world and get an AI travel guide instantly</p>
+            </div>
+
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <form onsubmit="handleAIDestinationSearch(event)" class="grid md:grid-cols-[1fr_auto] gap-4 items-end">
+                <div>
+                  <label for="ai-place-search" class="block text-sm font-medium text-slate-300 mb-2">Search any place</label>
+                  <input type="text" id="ai-place-search" value="${searchValue}" placeholder="Try Paris, Bali, Tokyo, Ladakh, New York..."
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition">
+                </div>
+                <button type="submit" class="btn-primary px-6 py-3 rounded-xl font-medium ${aiPlaceLoading ? 'opacity-70 cursor-not-allowed' : ''}" ${aiPlaceLoading ? 'disabled' : ''}>
+                  ${aiPlaceLoading ? 'Searching...' : 'Get AI Details'}
+                </button>
+              </form>            </div>
+
+            ${aiPlaceDetails ? renderAiPlaceDetailsCard(aiPlaceDetails) : ''}
+            
+            ${suggestions.length > 0 ? `
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-2xl font-semibold">Personalized Picks</h2>
+                  <span class="text-slate-400 text-sm">Click a card for built-in destination details</span>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  ${suggestions.map((dest, index) => `
+                    <div class="card-gradient rounded-2xl overflow-hidden glow match-card cursor-pointer hover:scale-105 transition" style="animation-delay: ${index * 0.1}s" onclick="loadAIDestinationDetail('${dest.name}')">
+                      <div class="h-32 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-6xl hover:scale-110 transition">
+                        ${dest.image}
+                      </div>
+                      <div class="p-6">
+                        <div class="flex items-center justify-between mb-2">
+                          <h3 class="font-semibold text-lg">${dest.name}</h3>
+                          <span class="px-2 py-1 bg-sky-500/20 text-sky-400 rounded text-xs font-medium">${dest.score}% match</span>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-4">${dest.description}</p>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                          <span class="px-2 py-1 bg-white/5 rounded text-xs">${dest.type}</span>
+                          <span class="px-2 py-1 bg-white/5 rounded text-xs">${dest.budget}</span>
+                          <span class="px-2 py-1 bg-white/5 rounded text-xs">${dest.season}</span>
+                        </div>
+                        <button class="w-full text-center py-2 bg-sky-500/20 text-sky-400 rounded-lg hover:bg-sky-500/30 transition text-sm font-medium">
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+        async function handleAIDestinationSearch(e) {
+      e.preventDefault();
+      if (aiPlaceLoading) return;
+
+      const input = document.getElementById('ai-place-search');
+      const place = input?.value?.trim();
+      if (!place) {
+        showToast('Enter a place name first', 'error');
+        return;
+      }
+
+      await loadAIDestinationDetail(place);
+    }
+
+    async function loadAIDestinationDetail(place) {
+      if (aiPlaceLoading) return;
+      aiPlaceLoading = true;
+      renderSuggestionsPage();
+
+      try {
+        const response = await fetch('/api/ai/place-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ place })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.isOk) {
+          throw new Error(result.error || 'Failed to get AI details');
+        }
+        aiPlaceDetails = result.data;
+        showToast(`AI guide ready for ${result.data.name || place}`);
+      } catch (error) {
+        aiPlaceDetails = { error: error.message || 'Failed to get AI details.', place_query: place };
+        showToast(aiPlaceDetails.error, 'error');
+      } finally {
+        aiPlaceLoading = false;
+        renderSuggestionsPage();
+      }
+    }
+
+    function startAITripPlanning(place) {
+      plannerDestination = place;
+      aiTripPlan = null;
+      navigateTo('planner');
+    }
+
+    async function requestAITripPlan(place, days) {
+      if (aiTripLoading) return;
+      aiTripLoading = true;
+      renderPlannerPage();
+
+      try {
+        const response = await fetch('/api/ai/trip-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ place, days })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.isOk) {
+          throw new Error(result.error || 'Failed to generate AI trip plan');
+        }
+        aiTripPlan = result.data;
+        plannerDestination = result.data.place || place;
+        showToast(`Trip plan ready for ${plannerDestination}`);
+      } catch (error) {
+        aiTripPlan = { error: error.message || 'Failed to generate AI trip plan.', place_query: place, trip_length: days };
+        showToast(aiTripPlan.error, 'error');
+      } finally {
+        aiTripLoading = false;
+        renderPlannerPage();
+      }
+    }
+
+    function renderAiPlaceDetailsCard(details) {
+      if (details.error) {
+        return `
+          <div class="card-gradient rounded-2xl p-6 glow mb-8 border border-red-500/20">
+            <h2 class="text-xl font-semibold mb-2">AI Search Error</h2>
+            <p class="text-slate-300">${details.error}</p>
+            <p class="text-slate-500 text-sm mt-2">Search tried: ${details.place_query || 'Unknown place'}</p>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="card-gradient rounded-2xl p-8 glow mb-10 border border-sky-500/20">
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-6">
+            <div>
+              <p class="text-sky-400 text-sm font-medium mb-2">Live AI Travel Guide</p>
+              <h2 class="font-display text-4xl font-bold">${details.name || details.place_query}</h2>
+              <p class="text-slate-400 mt-2">${details.country || ''}</p>
+              <p class="text-slate-300 mt-4 leading-7">${details.overview || details.why_visit || ''}</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 min-w-[260px]">
+              <div class="bg-white/5 rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Best Time</p>
+                <p class="font-semibold mt-1">${details.best_time_to_visit || 'Flexible'}</p>
+              </div>
+              <div class="bg-white/5 rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Budget</p>
+                <p class="font-semibold mt-1">${details.budget_level || 'Varies'}</p>
+              </div>
+              <div class="bg-white/5 rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Daily Cost</p>
+                <p class="font-semibold mt-1">${details.estimated_daily_budget_inr || 'Ask locally'}</p>
+              </div>
+              <div class="bg-white/5 rounded-xl p-4">
+                <p class="text-slate-400 text-sm">Trip Length</p>
+                <p class="font-semibold mt-1">${details.ideal_trip_length || '3-5 days'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold text-lg mb-3">Top Attractions</h3>
+              <div class="space-y-2">
+                ${(details.top_attractions || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No attractions available.</p>'}
+              </div>
+            </div>
+            <div class="bg-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold text-lg mb-3">Things To Do</h3>
+              <div class="space-y-2">
+                ${(details.activities || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No activities available.</p>'}
+              </div>
+            </div>
+            <div class="bg-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold text-lg mb-3">Foods To Try</h3>
+              <div class="space-y-2">
+                ${(details.foods_to_try || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No food suggestions available.</p>'}
+              </div>
+            </div>
+            <div class="bg-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold text-lg mb-3">Stay Options</h3>
+              <div class="space-y-2">
+                ${(details.stay_options || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No stay options available.</p>'}
+              </div>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold text-lg mb-3">Transport Tips</h3>
+              <div class="space-y-2">
+                ${(details.transport_tips || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No transport tips available.</p>'}
+              </div>
+            </div>
+            <div class="bg-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold text-lg mb-3">Safety Tips</h3>
+              <div class="space-y-2">
+                ${(details.safety_tips || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No safety tips available.</p>'}
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white/5 rounded-2xl p-5">
+            <h3 class="font-semibold text-lg mb-4">Sample Itinerary</h3>
+            <div class="space-y-4">
+              ${(details.itinerary || []).map(item => `
+                <div class="border border-white/10 rounded-xl p-4">
+                  <p class="text-sky-400 font-medium mb-1">${item.day || 'Day Plan'}</p>
+                  <p class="text-slate-300">${item.plan || ''}</p>
+                </div>
+              `).join('') || '<p class="text-slate-400">No itinerary available.</p>'}
+            </div>
+          </div>
+
+          <div class="mt-6 flex gap-4">
+            <button onclick="startAITripPlanning('${details.name || details.place_query}')" class="flex-1 btn-primary py-4 rounded-xl font-semibold">
+              Plan My Trip
+            </button>
+            <button onclick="navigateTo('suggestions')" class="flex-1 btn-secondary py-4 rounded-xl font-semibold">
+              Back to Suggestions
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function showDestinationDetail(destinationName) {
+      const destInfo = getDetailedDestinationInfo(destinationName);
+      if (!destInfo) return;
+      
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-4xl mx-auto">
+            <!-- Back Button -->
+            <button onclick="navigateTo('suggestions')" class="mb-6 flex items-center gap-2 text-sky-400 hover:text-sky-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back to Suggestions
+            </button>
+            
+            <!-- Header -->
+            <div class="card-gradient rounded-2xl p-8 glow mb-8">
+              <div class="flex items-start justify-between mb-6">
+                <div>
+                  <div class="text-6xl mb-4">${destInfo.image}</div>
+                  <h1 class="font-display text-4xl font-bold mb-2">${destInfo.name}</h1>
+                  <p class="text-slate-400 text-lg">${destInfo.description}</p>
+                </div>
+              </div>
+              
+              <div class="grid sm:grid-cols-4 gap-4">
+                <div class="bg-white/5 rounded-lg p-3">
+                  <p class="text-slate-400 text-sm">Type</p>
+                  <p class="font-semibold capitalize">${destInfo.type}</p>
+                </div>
+                <div class="bg-white/5 rounded-lg p-3">
+                  <p class="text-slate-400 text-sm">Budget</p>
+                  <p class="font-semibold capitalize">${destInfo.budget}</p>
+                </div>
+                <div class="bg-white/5 rounded-lg p-3">
+                  <p class="text-slate-400 text-sm">Season</p>
+                  <p class="font-semibold capitalize">${destInfo.season}</p>
+                </div>
+                <div class="bg-white/5 rounded-lg p-3">
+                  <p class="text-slate-400 text-sm">Region</p>
+                  <p class="font-semibold">${destInfo.region}</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Tourist Spots -->
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <h2 class="font-semibold text-xl mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Must-Visit Tourist Spots
+              </h2>
+              <div class="grid sm:grid-cols-2 gap-4">
+                ${(destInfo.tourist_spots || []).map((spot, i) => `
+                  <div class="flex items-start gap-3 p-4 bg-white/5 rounded-lg">
+                    <span class="text-sky-400 font-bold">${i + 1}</span>
+                    <div>
+                      <p class="font-medium">${spot}</p>
+                      <p class="text-slate-400 text-sm">Popular attraction</p>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <!-- Activities -->
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <h2 class="font-semibold text-xl mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Things to Do
+              </h2>
+              <div class="grid sm:grid-cols-2 gap-4">
+                ${(destInfo.activities || []).map((activity, i) => `
+                  <div class="flex items-center gap-3 p-4 bg-white/5 rounded-lg">
+                    <span class="text-emerald-400">✓</span>
+                    <span>${activity}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <!-- Hotels & Accommodation -->
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <h2 class="font-semibold text-xl mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 5v14a1 1 0 001 1h12a1 1 0 001-1V5M9 5v14m6-14v14"/>
+                </svg>
+                Hotels & Accommodation
+              </h2>
+              <div class="grid sm:grid-cols-2 gap-4">
+                ${(destInfo.hotels || []).map((hotel, i) => `
+                  <div class="p-4 bg-white/5 rounded-lg border border-rose-500/20">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="text-rose-400">⭐</span>
+                      <p class="font-medium">${hotel}</p>
+                    </div>
+                    <p class="text-slate-400 text-sm">Quality accommodation option</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <!-- Plan Trip Button -->
+            <div class="flex gap-4">
+              <button onclick="startPlanForDestination('${destInfo.name}')" class="flex-1 btn-primary py-4 rounded-xl font-semibold">
+                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Create Detailed Itinerary
+              </button>
+              <button onclick="navigateTo('suggestions')" class="flex-1 btn-secondary py-4 rounded-xl font-semibold">
+                View More Destinations
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    function startPlanForDestination(destinationName) {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      const days = currentUser.days || 5;
+      const plan = generateDestinationDetailedPlan(destinationName, days);
+      
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-4xl mx-auto">
+            <button onclick="showDestinationDetail('${destinationName}')" class="mb-6 flex items-center gap-2 text-sky-400 hover:text-sky-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back to ${destinationName}
+            </button>
+            
+            <div class="text-center mb-8">
+              <h1 class="font-display text-3xl font-bold">Complete Travel Itinerary</h1>
+              <p class="text-slate-400 mt-2">${destinationName} - ${days} Days</p>
+            </div>
+            
+            <div class="space-y-4">
+              ${plan.map((day, index) => `
+                <div class="card-gradient rounded-2xl p-6 glow fade-in" style="animation-delay: ${index * 0.1}s">
+                  <div class="flex items-start gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center font-bold text-lg">
+                      ${day.day}
+                    </div>
+                    <div>
+                      <h3 class="font-semibold text-lg">${day.title}</h3>
+                      <p class="text-sm text-slate-400">${day.activities.length} activities planned</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Main Activities -->
+                  <div class="mb-4 space-y-2">
+                    ${day.activities.map((activity, actIndex) => `
+                      <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                        <div class="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm font-semibold">
+                          ${actIndex + 1}
+                        </div>
+                        <span class="flex-1">${activity}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  
+                  <!-- Spots & Hotels -->
+                  <div class="grid sm:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                    <div>
+                      <p class="text-slate-400 text-sm mb-2">🎯 Key Spot</p>
+                      <p class="font-medium text-emerald-400">${day.spots[0] || 'Local exploration'}</p>
+                    </div>
+                    <div>
+                      <p class="text-slate-400 text-sm mb-2">🏨 Suggested Stay</p>
+                      <p class="font-medium text-rose-400">${day.hotels[0] || 'Local hotel'}</p>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            
+            <!-- Save & Share -->
+            <div class="mt-8 flex gap-4">
+              <button onclick="navigateTo('planner')" class="flex-1 btn-primary py-4 rounded-xl font-semibold">
+                Save This Plan
+              </button>
+              <button onclick="navigateTo('find')" class="flex-1 btn-secondary py-4 rounded-xl font-semibold">
+                Find Companions
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+        function renderPlannerPage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+
+      const main = document.getElementById('main-content');
+      const defaultDays = currentUser?.days || 5;
+      const selectedDays = parseInt(document.getElementById('planner-days')?.value) || defaultDays;
+      const selectedPlace = document.getElementById('planner-place')?.value || plannerDestination || aiPlaceDetails?.name || '';
+
+      if (selectedPlace && !aiTripPlan && !aiTripLoading) {
+        setTimeout(() => requestAITripPlan(selectedPlace, selectedDays), 0);
+      }
+
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-8">
+              <div class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-4 py-2 rounded-full mb-4">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="text-sm">AI Travel Planner</span>
+              </div>
+              <h1 class="font-display text-3xl font-bold">Plan My Trip</h1>
+              <p class="text-slate-400 mt-2">Get a day-wise AI itinerary with hotels, travel timing, viewpoints, and visit points</p>
+            </div>
+
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <div class="grid md:grid-cols-[1fr_180px_auto] gap-4 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2">Destination</label>
+                  <input type="text" id="planner-place" value="${selectedPlace}" placeholder="Enter a place name"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2">Days</label>
+                  <select id="planner-days" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white">
+                    ${[1,2,3,4,5,6,7,8,9,10].map(day => `<option value="${day}" class="bg-slate-800" ${selectedDays === day ? 'selected' : ''}>${day} Days</option>`).join('')}
+                  </select>
+                </div>
+                <button onclick="requestAITripPlan(document.getElementById('planner-place').value.trim(), parseInt(document.getElementById('planner-days').value) || ${defaultDays})" class="btn-primary px-6 py-3 rounded-xl font-medium ${aiTripLoading ? 'opacity-70 cursor-not-allowed' : ''}" ${aiTripLoading ? 'disabled' : ''}>
+                  ${aiTripLoading ? 'Planning...' : 'Generate Plan'}
+                </button>
+              </div>
+            </div>
+
+            ${!selectedPlace ? `
+              <div class="card-gradient rounded-2xl p-10 text-center glow">
+                <p class="text-slate-300 text-lg">Choose a destination to generate your AI trip plan.</p>
+              </div>
+            ` : aiTripPlan?.error ? `
+              <div class="card-gradient rounded-2xl p-6 glow border border-red-500/20">
+                <h2 class="text-xl font-semibold mb-2">Planner Error</h2>
+                <p class="text-slate-300">${aiTripPlan.error}</p>
+              </div>
+            ` : aiTripPlan ? `
+              <div class="space-y-6">
+                <div class="card-gradient rounded-2xl p-6 glow">
+                  <h2 class="font-display text-3xl font-bold mb-2">${aiTripPlan.place || selectedPlace}</h2>
+                  <p class="text-slate-300 mb-4">${aiTripPlan.overview || ''}</p>
+                  <div class="grid md:grid-cols-3 gap-4">
+                    <div class="bg-white/5 rounded-xl p-4">
+                      <p class="text-slate-400 text-sm">Trip Length</p>
+                      <p class="font-semibold mt-1">${aiTripPlan.trip_length || selectedDays} Days</p>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4">
+                      <p class="text-slate-400 text-sm">Best Area To Stay</p>
+                      <p class="font-semibold mt-1">${aiTripPlan.best_area_to_stay || 'Central area'}</p>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4">
+                      <p class="text-slate-400 text-sm">Hotel Suggestions</p>
+                      <p class="font-semibold mt-1">${(aiTripPlan.hotel_suggestions || []).slice(0,2).join(', ') || 'See below'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-6">
+                  <div class="card-gradient rounded-2xl p-6 glow">
+                    <h3 class="font-semibold text-lg mb-3">Hotel Suggestions</h3>
+                    <div class="space-y-2">${(aiTripPlan.hotel_suggestions || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No hotel suggestions available.</p>'}</div>
+                  </div>
+                  <div class="card-gradient rounded-2xl p-6 glow">
+                    <h3 class="font-semibold text-lg mb-3">Transport Summary</h3>
+                    <div class="space-y-2">${(aiTripPlan.transport_summary || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No transport summary available.</p>'}</div>
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  ${(aiTripPlan.daily_plan || []).map((dayPlan, index) => `
+                    <div class="card-gradient rounded-2xl p-6 glow fade-in" style="animation-delay: ${index * 0.05}s">
+                      <div class="flex items-start justify-between gap-4 mb-4">
+                        <div>
+                          <p class="text-sky-400 font-semibold">${dayPlan.day || `Day ${index + 1}`}</p>
+                          <h3 class="text-xl font-semibold mt-1">${dayPlan.theme || 'Daily Plan'}</h3>
+                        </div>
+                        <div class="text-right">
+                          <p class="text-slate-400 text-sm">Suggested Hotel</p>
+                          <p class="font-medium">${dayPlan.hotel || 'Local stay'}</p>
+                        </div>
+                      </div>
+
+                      <div class="grid lg:grid-cols-2 gap-4">
+                        <div class="bg-white/5 rounded-xl p-4">
+                          <h4 class="font-medium mb-2">Travel Timing</h4>
+                          <div class="space-y-2">${(dayPlan.timing || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No timing details available.</p>'}</div>
+                        </div>
+                        <div class="bg-white/5 rounded-xl p-4">
+                          <h4 class="font-medium mb-2">Visit Points</h4>
+                          <div class="space-y-2">${(dayPlan.visit_points || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No visit points available.</p>'}</div>
+                        </div>
+                        <div class="bg-white/5 rounded-xl p-4">
+                          <h4 class="font-medium mb-2">Nearby Viewpoints</h4>
+                          <div class="space-y-2">${(dayPlan.nearby_viewpoints || []).map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No viewpoint suggestions available.</p>'}</div>
+                        </div>
+                        <div class="bg-white/5 rounded-xl p-4">
+                          <h4 class="font-medium mb-2">Food & Travel Notes</h4>
+                          <div class="space-y-2">${[...(dayPlan.food_plan || []), ...(dayPlan.travel_notes || [])].map(item => `<p class="text-slate-300">� ${item}</p>`).join('') || '<p class="text-slate-400">No extra notes available.</p>'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : `
+              <div class="card-gradient rounded-2xl p-10 text-center glow">
+                <div class="animate-spin w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p class="text-slate-300">Generating your AI itinerary...</p>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProfilePage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      const pendingRequests = allRequests.filter(r => r.request_to === currentUser.__backendId && r.request_status === 'pending');
+      const myRequests = allRequests.filter(r => r.request_from === currentUser.__backendId);
+      
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-4xl mx-auto">
+            <!-- Profile Header -->
+            <div class="card-gradient rounded-2xl p-8 glow mb-8">
+              <div class="flex items-center gap-6 mb-6">
+                <div class="flex items-center gap-6">
+                  ${renderUserAvatar(currentUser, 'w-20 h-20 rounded-2xl')}
+                  <div>
+                    <h1 class="font-display text-2xl font-bold">${currentUser.username}</h1>
+                    <p class="text-slate-400">${currentUser.email}</p>
+                    <label class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition text-sm">
+                      <input type="file" accept="image/*" class="hidden" onchange="handleProfilePhotoUpload(event)">
+                      <span>Upload Profile Photo</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Edit Preferences Section -->
+            <div class="card-gradient rounded-2xl p-8 glow mb-8">
+              <h2 class="font-semibold text-xl mb-6 flex items-center gap-2">
+                <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                </svg>
+                Edit Preferences
+              </h2>
+              
+              <form id="profile-pref-form" onsubmit="savePreferences(event)" class="space-y-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label for="pref-budget" class="block text-sm font-medium text-slate-300 mb-2">💰 Budget</label>
+                    <select id="pref-budget" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select budget</option>
+                      <option value="low" class="bg-slate-800" ${currentUser.budget === 'low' ? 'selected' : ''}>Low (Budget-friendly)</option>
+                      <option value="medium" class="bg-slate-800" ${currentUser.budget === 'medium' ? 'selected' : ''}>Medium (Moderate)</option>
+                      <option value="high" class="bg-slate-800" ${currentUser.budget === 'high' ? 'selected' : ''}>High (Luxury)</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-travel-type" class="block text-sm font-medium text-slate-300 mb-2">✈️ Travel Type</label>
+                    <select id="pref-travel-type" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select type</option>
+                      <option value="adventure" class="bg-slate-800" ${currentUser.travel_type === 'adventure' ? 'selected' : ''}>Adventure</option>
+                      <option value="relax" class="bg-slate-800" ${currentUser.travel_type === 'relax' ? 'selected' : ''}>Relaxation</option>
+                      <option value="family" class="bg-slate-800" ${currentUser.travel_type === 'family' ? 'selected' : ''}>Family</option>
+                      <option value="solo" class="bg-slate-800" ${currentUser.travel_type === 'solo' ? 'selected' : ''}>Solo Exploration</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-days" class="block text-sm font-medium text-slate-300 mb-2">📅 Number of Days</label>
+                    <input type="number" id="pref-days" required min="1" max="30"
+                      value="${currentUser.days || ''}"
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 transition"
+                      placeholder="Enter number of days">
+                  </div>
+                  
+                  <div>
+                    <label for="pref-season" class="block text-sm font-medium text-slate-300 mb-2">🌡️ Preferred Season</label>
+                    <select id="pref-season" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select season</option>
+                      <option value="any" class="bg-slate-800" ${currentUser.season === 'any' ? 'selected' : ''}>Any Season</option>
+                      <option value="summer" class="bg-slate-800" ${currentUser.season === 'summer' ? 'selected' : ''}>Summer</option>
+                      <option value="winter" class="bg-slate-800" ${currentUser.season === 'winter' ? 'selected' : ''}>Winter</option>
+                      <option value="spring" class="bg-slate-800" ${currentUser.season === 'spring' ? 'selected' : ''}>Spring</option>
+                      <option value="autumn" class="bg-slate-800" ${currentUser.season === 'autumn' ? 'selected' : ''}>Autumn</option>
+                      <option value="monsoon" class="bg-slate-800" ${currentUser.season === 'monsoon' ? 'selected' : ''}>Monsoon</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-destination" class="block text-sm font-medium text-slate-300 mb-2">🏞️ Destination Type</label>
+                    <select id="pref-destination" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select destination</option>
+                      <option value="beach" class="bg-slate-800" ${currentUser.destination_type === 'beach' ? 'selected' : ''}>🏖️ Beach</option>
+                      <option value="hill" class="bg-slate-800" ${currentUser.destination_type === 'hill' ? 'selected' : ''}>⛰️ Hill Station</option>
+                      <option value="city" class="bg-slate-800" ${currentUser.destination_type === 'city' ? 'selected' : ''}>🏙️ City</option>
+                      <option value="forest" class="bg-slate-800" ${currentUser.destination_type === 'forest' ? 'selected' : ''}>🌲 Forest</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-mode" class="block text-sm font-medium text-slate-300 mb-2">🚌 Travel Mode</label>
+                    <select id="pref-mode" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select mode</option>
+                      <option value="solo" class="bg-slate-800" ${currentUser.travel_mode === 'solo' ? 'selected' : ''}>Solo Traveller</option>
+                      <option value="group" class="bg-slate-800" ${currentUser.travel_mode === 'group' ? 'selected' : ''}>With My Group</option>
+                      <option value="join" class="bg-slate-800" ${currentUser.travel_mode === 'join' ? 'selected' : ''}>Looking to Join</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-accommodation" class="block text-sm font-medium text-slate-300 mb-2">🏠 Accommodation Type</label>
+                    <select id="pref-accommodation" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select accommodation</option>
+                      <option value="hotel" class="bg-slate-800" ${currentUser.accommodation === 'hotel' ? 'selected' : ''}>🏨 Hotel</option>
+                      <option value="airbnb" class="bg-slate-800" ${currentUser.accommodation === 'airbnb' ? 'selected' : ''}>🏘️ Airbnb</option>
+                      <option value="hostel" class="bg-slate-800" ${currentUser.accommodation === 'hostel' ? 'selected' : ''}>🏢 Hostel</option>
+                      <option value="camping" class="bg-slate-800" ${currentUser.accommodation === 'camping' ? 'selected' : ''}>⛺ Camping</option>
+                      <option value="resort" class="bg-slate-800" ${currentUser.accommodation === 'resort' ? 'selected' : ''}>🏝️ Resort</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label for="pref-gender" class="block text-sm font-medium text-slate-300 mb-2">👥 Gender Preference</label>
+                    <select id="pref-gender" required
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white transition">
+                      <option value="" class="bg-slate-800">Select preference</option>
+                      <option value="any" class="bg-slate-800" ${currentUser.gender_preference === 'any' ? 'selected' : ''}>Any</option>
+                      <option value="male" class="bg-slate-800" ${currentUser.gender_preference === 'male' ? 'selected' : ''}>Male</option>
+                      <option value="female" class="bg-slate-800" ${currentUser.gender_preference === 'female' ? 'selected' : ''}>Female</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-semibold">
+                  Save Preferences
+                </button>
+              </form>
+            </div>
+            
+            <!-- Pending Requests -->
+            ${pendingRequests.length > 0 ? `
+              <div class="card-gradient rounded-2xl p-6 glow mb-8">
+                <h2 class="font-semibold mb-4">📬 Pending Requests (${pendingRequests.length})</h2>
+                <div class="space-y-3">
+                  ${pendingRequests.map(req => {
+                    const fromUser = allUsers.find(u => u.__backendId === req.request_from);
+                    return `
+                      <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center font-bold">
+                            ${fromUser?.username?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <span>${fromUser?.username || 'Unknown'}</span>
+                        </div>
+                        <div class="flex gap-2">
+                          <button onclick="handleRequest('${req.__backendId}', true)" 
+                            class="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition">
+                            ✓ Accept
+                          </button>
+                          <button onclick="handleRequest('${req.__backendId}', false)"
+                            class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition">
+                            ✕ Decline
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function startChat(userId, username) {
+      currentChatId = userId;
+      navigateTo('chat');
+    }
+
+    function renderMessagesPage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      const main = document.getElementById('main-content');
+      const conversations = new Map();
+      
+      // Group messages by conversation
+      allMessages.forEach(msg => {
+        if (msg.message_from === currentUser.__backendId || msg.message_to === currentUser.__backendId) {
+          const otherId = msg.message_from === currentUser.__backendId ? msg.message_to : msg.message_from;
+          if (!conversations.has(otherId)) {
+            conversations.set(otherId, []);
+          }
+          conversations.get(otherId).push(msg);
+        }
+      });
+      
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-8">
+              <h1 class="font-display text-3xl font-bold">💬 Messages</h1>
+              <p class="text-slate-400 mt-2">Chat with your travel companions</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+              ${conversations.size === 0 ? `
+                <div class="col-span-full card-gradient rounded-xl p-12 text-center">
+                  <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-semibold text-slate-300">No conversations yet</h3>
+                  <p class="text-slate-500 mt-2">Start chatting with your travel matches!</p>
+                </div>
+              ` : Array.from(conversations.entries()).map(([userId, messages]) => {
+                const otherUser = allUsers.find(u => u.__backendId === userId);
+                const lastMessage = messages[messages.length - 1];
+                return `
+                  <div class="card-gradient rounded-2xl p-6 glow match-card cursor-pointer hover:bg-white/10 transition"
+                    onclick="startChat('${userId}', '${otherUser?.username}')">
+                    <div class="flex items-center gap-4 mb-4">
+                      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-lg font-bold">
+                        ${otherUser?.username?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div class="flex-1">
+                        <h3 class="font-semibold">${otherUser?.username}</h3>
+                        <p class="text-sm text-slate-400 truncate">${lastMessage?.message_text || 'No messages'}</p>
+                      </div>
+                    </div>
+                    <button onclick="event.stopPropagation(); startChat('${userId}', '${otherUser?.username}')" 
+                      class="w-full btn-primary py-2 rounded-lg text-sm font-medium">
+                      Open Chat
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderChatPage() {
+      if (!currentUser || !currentChatId) {
+        navigateTo('messages');
+        return;
+      }
+      
+      const otherUser = allUsers.find(u => u.__backendId === currentChatId);
+      if (!otherUser) {
+        navigateTo('messages');
+        return;
+      }
+      
+      const messages = getConversationMessages(currentChatId);
+      const main = document.getElementById('main-content');
+      
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4 h-full flex flex-col">
+          <div class="max-w-4xl mx-auto w-full flex flex-col h-full">
+            <!-- Chat Header -->
+            <div class="card-gradient rounded-2xl p-4 glow mb-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-lg font-bold">
+                    ${otherUser.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h1 class="font-semibold">${otherUser.username}</h1>
+                    <p class="text-sm text-slate-400">Online</p>
+                  </div>
+                </div>
+                <button onclick="navigateTo('messages')" class="text-slate-400 hover:text-white transition">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Messages Container -->
+            <div id="messages-container" class="flex-1 overflow-y-auto mb-6 space-y-4">
+              ${messages.length === 0 ? `
+                <div class="text-center py-12">
+                  <p class="text-slate-400">Start the conversation!</p>
+                </div>
+              ` : messages.map(msg => `
+                <div class="flex ${msg.message_from === currentUser.__backendId ? 'justify-end' : 'justify-start'}">
+                  <div class="max-w-xs ${msg.message_from === currentUser.__backendId ? 'bg-sky-500/20 border border-sky-500/30' : 'bg-white/5 border border-white/10'} rounded-lg p-4">
+                    <p class="text-sm">${msg.message_text}</p>
+                    <p class="text-xs text-slate-500 mt-2">${new Date(msg.created_at).toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            
+            <!-- Message Input -->
+            <div class="card-gradient rounded-2xl p-4 glow">
+              <form onsubmit="handleSendMessage(event, '${currentChatId}', '${otherUser.username}')" class="flex gap-3">
+                <input type="text" id="msg-input" placeholder="Type your message..."
+                  class="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 transition"
+                  autocomplete="off">
+                <button type="submit" class="btn-primary px-6 py-2 rounded-lg font-medium">
+                  Send
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        const container = document.getElementById('messages-container');
+        if (container) container.scrollTop = container.scrollHeight;
+      }, 100);
+    }
+
+    function handleSendMessage(e, userId, username) {
+      e.preventDefault();
+      const messageText = document.getElementById('msg-input').value;
+      sendMessage(userId, username, messageText);
+    }
+
+    function renderResultsPage() {
+      if (!currentUser) {
+        navigateTo('login');
+        return;
+      }
+      
+      const matches = findMatches().slice(0, 3);
+      const suggestions = getDestinationSuggestions().slice(0, 3);
+      const plan = generateTravelPlan('', currentUser.days || 5);
+      
+      const main = document.getElementById('main-content');
+      main.innerHTML = `
+        <div class="fade-in py-12 px-4">
+          <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <h1 class="font-display text-3xl font-bold">Trip Summary</h1>
+              <p class="text-slate-400 mt-2">Your complete travel plan at a glance</p>
+            </div>
+            
+            <!-- Summary Card -->
+            <div class="card-gradient rounded-2xl p-8 glow mb-8">
+              <h2 class="font-semibold text-xl mb-6">Your Trip Details</h2>
+              <div class="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <p class="text-slate-400 mb-1">Destination Type</p>
+                  <p class="text-xl font-semibold capitalize">${currentUser.destination_type}</p>
+                </div>
+                <div>
+                  <p class="text-slate-400 mb-1">Duration</p>
+                  <p class="text-xl font-semibold">${currentUser.days} Days</p>
+                </div>
+                <div>
+                  <p class="text-slate-400 mb-1">Budget</p>
+                  <p class="text-xl font-semibold capitalize">${currentUser.budget}</p>
+                </div>
+                <div>
+                  <p class="text-slate-400 mb-1">Season</p>
+                  <p class="text-xl font-semibold capitalize">${currentUser.season}</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Top Matches -->
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <h2 class="font-semibold text-xl mb-4">Top Companion Matches</h2>
+              <div class="space-y-3">
+                ${matches.length > 0 ? matches.map(match => `
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center font-bold">
+                        ${match.user.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p class="font-medium">${match.user.username}</p>
+                        <p class="text-sm text-slate-400">${match.matchType}</p>
+                      </div>
+                    </div>
+                    <span class="text-sky-400 font-bold">${match.score}%</span>
+                  </div>
+                `).join('') : '<p class="text-slate-400 text-center py-4">No matches found yet</p>'}
+              </div>
+            </div>
+            
+            <!-- Top Destinations -->
+            <div class="card-gradient rounded-2xl p-6 glow mb-8">
+              <h2 class="font-semibold text-xl mb-4">Recommended Destinations</h2>
+              <div class="grid sm:grid-cols-3 gap-4">
+                ${suggestions.map(dest => `
+                  <div class="bg-white/5 rounded-xl p-4 text-center">
+                    <div class="text-4xl mb-2">${dest.image}</div>
+                    <p class="font-medium">${dest.name}</p>
+                    <p class="text-sm text-sky-400">${dest.score}% match</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+              <button onclick="navigateTo('find')" class="btn-primary px-8 py-3 rounded-xl font-medium">
+                Find More Companions
+              </button>
+              <button onclick="navigateTo('preferences')" class="btn-secondary px-8 py-3 rounded-xl font-medium">
+                Update Preferences
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ===== INITIALIZE =====
+    updateAuthButtons();
+    navigateTo('home');
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dac50d1444d3d30',t:'MTc3MzI1MDUyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
